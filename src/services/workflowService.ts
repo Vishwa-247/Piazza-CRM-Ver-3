@@ -3,14 +3,7 @@ import { Lead } from "./dataService";
 
 export interface WorkflowAction {
   id: string;
-  type:
-    | "send_email"
-    | "update_status"
-    | "create_task"
-    | "schedule_followup"
-    | "assign_rep"
-    | "send_sms"
-    | "create_calendar_event";
+  type: "send_email" | "update_status" | "create_task";
   label: string;
   config?: Record<string, unknown>;
 }
@@ -85,7 +78,7 @@ class WorkflowService {
     actions: WorkflowAction[],
     progressCallback?: (progress: number, message: string) => void
   ): Promise<WorkflowExecution> {
-    const leadData = this.getLeadById(leadId);
+    const leadData = await this.getLeadById(leadId);
     if (!leadData) {
       throw new Error(`Lead ${leadId} not found`);
     }
@@ -236,22 +229,6 @@ class WorkflowService {
           await this.createTask(lead, result);
           break;
 
-        case "schedule_followup":
-          await this.scheduleFollowup(lead, result);
-          break;
-
-        case "assign_rep":
-          await this.assignRep(lead, result);
-          break;
-
-        case "send_sms":
-          await this.sendSMS(lead, result);
-          break;
-
-        case "create_calendar_event":
-          await this.createCalendarEvent(lead, result);
-          break;
-
         default:
           throw new Error(`Unknown action type: ${action.type}`);
       }
@@ -278,6 +255,14 @@ class WorkflowService {
     result.data = { subject, body, to: lead.email };
 
     console.log(`📧 Email sent for ${lead.name}:`, { subject, to: lead.email });
+
+    // Show toast notification for email sent
+    const { toast } = await import("@/hooks/use-toast");
+    toast({
+      title: "📧 Email Sent",
+      description: `Welcome email sent to ${lead.name}`,
+      duration: 3000,
+    });
   }
 
   // Update lead status action
@@ -301,6 +286,14 @@ class WorkflowService {
         detail: { leadId: lead.id, updates: { status: newStatus } },
       })
     );
+
+    // Show toast notification for status update
+    const { toast } = await import("@/hooks/use-toast");
+    toast({
+      title: "🔄 Status Updated",
+      description: `${lead.name} status changed to ${newStatus.toUpperCase()}`,
+      duration: 3000,
+    });
   }
 
   // Create task action
@@ -320,6 +313,14 @@ class WorkflowService {
       task.title
     }" (Due: ${task.dueDate.toLocaleDateString()})`;
     result.data = { task };
+
+    // Show toast notification for task creation
+    const { toast } = await import("@/hooks/use-toast");
+    toast({
+      title: "📋 Task Created",
+      description: `Follow-up task created for ${lead.name}`,
+      duration: 3000,
+    });
   }
 
   // Schedule follow-up action
@@ -425,9 +426,9 @@ This email was sent to {{email}} on {{date}}.`,
   }
 
   // Get lead by ID
-  private getLeadById(leadId: string): Lead | null {
+  private async getLeadById(leadId: string): Promise<Lead | null> {
     // Import dynamically to avoid circular dependency
-    const { loadData } = require("./dataService");
+    const { loadData } = await import("./dataService");
     const data = loadData();
     return data.leads.find((lead: Lead) => lead.id === leadId) || null;
   }
@@ -451,9 +452,7 @@ This email was sent to {{email}} on {{date}}.`,
   }
 
   // Extract actions from saved workflow
-  private extractActionsFromWorkflow(
-    workflow: SavedWorkflow
-  ): WorkflowAction[] {
+  public extractActionsFromWorkflow(workflow: SavedWorkflow): WorkflowAction[] {
     const actions: WorkflowAction[] = [];
 
     // Find action nodes (exclude trigger nodes)
@@ -483,30 +482,6 @@ This email was sent to {{email}} on {{date}}.`,
           type: "create_task",
           label: "Create Follow-up Task",
         });
-      } else if (label.includes("Schedule Follow")) {
-        actions.push({
-          id: node.id,
-          type: "schedule_followup",
-          label: "Schedule Follow-up",
-        });
-      } else if (label.includes("Assign Rep")) {
-        actions.push({
-          id: node.id,
-          type: "assign_rep",
-          label: "Assign Representative",
-        });
-      } else if (label.includes("Send SMS")) {
-        actions.push({
-          id: node.id,
-          type: "send_sms",
-          label: "Send SMS",
-        });
-      } else if (label.includes("Calendar Event")) {
-        actions.push({
-          id: node.id,
-          type: "create_calendar_event",
-          label: "Create Calendar Event",
-        });
       }
     });
 
@@ -521,6 +496,10 @@ This email was sent to {{email}} on {{date}}.`,
     } catch {
       return null;
     }
+  }
+
+  public getCurrentWorkflow(): SavedWorkflow | null {
+    return this.getSavedWorkflow();
   }
 
   // Notify workflow completion

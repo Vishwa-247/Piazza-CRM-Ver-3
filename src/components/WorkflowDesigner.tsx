@@ -1,34 +1,6 @@
-import { useCallback, useState, useEffect } from "react";
-import {
-  ReactFlow,
-  MiniMap,
-  Controls,
-  Background,
-  useNodesState,
-  useEdgesState,
-  addEdge,
-  Connection,
-  Edge,
-  Node,
-  BackgroundVariant,
-} from "@xyflow/react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  Save,
-  Play,
-  Download,
-  Upload,
-  Zap,
-  Mail,
-  CheckCircle,
-  Users,
-  Plus,
-  Loader2,
-} from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -38,7 +10,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { workflowService, WorkflowExecution } from "@/services/workflowService";
+import { WorkflowExecution, workflowService } from "@/services/workflowService";
+import {
+  addEdge,
+  Background,
+  BackgroundVariant,
+  Connection,
+  Controls,
+  Edge,
+  MiniMap,
+  Node,
+  ReactFlow,
+  useEdgesState,
+  useNodesState,
+} from "@xyflow/react";
+import { Download, Loader2, Play, Plus, Save, Upload, Zap } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 import "@xyflow/react/dist/style.css";
 
@@ -61,42 +48,53 @@ export const WorkflowDesigner = () => {
   const [selectedAction, setSelectedAction] = useState<string>("");
   const [executions, setExecutions] = useState<WorkflowExecution[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
-  const [executionProgress, setExecutionProgress] = useState(0);
-  const [executionMessage, setExecutionMessage] = useState("");
-  const [currentExecution, setCurrentExecution] = useState<WorkflowExecution | null>(null);
 
-  // Load executions on mount
+  // Load executions and workflow on mount
   useEffect(() => {
     setExecutions(workflowService.getExecutionHistory());
+
+    // Load saved workflow on mount
+    const savedWorkflow = localStorage.getItem("crm-workflow");
+    if (savedWorkflow) {
+      try {
+        const workflow = JSON.parse(savedWorkflow);
+        setNodes(workflow.nodes || initialNodes);
+        setEdges(workflow.edges || initialEdges);
+      } catch (error) {
+        console.error("Failed to load saved workflow:", error);
+      }
+    }
   }, []);
 
   // Listen for workflow completion
   useEffect(() => {
     const handleWorkflowCompleted = (event: CustomEvent) => {
       const execution = event.detail as WorkflowExecution;
-      setCurrentExecution(execution);
       setExecutions(workflowService.getExecutionHistory());
       setIsExecuting(false);
-      setExecutionProgress(100);
-      setExecutionMessage("Workflow completed successfully!");
-      
-      // Close modal after 2 seconds
-      setTimeout(() => {
-        setCurrentExecution(null);
-        setExecutionProgress(0);
-        setExecutionMessage("");
-      }, 2000);
+
+      toast({
+        title: "✅ Workflow Completed",
+        description: `Successfully executed workflow for ${execution.leadName}`,
+        duration: 4000,
+      });
     };
 
     const handleLeadUpdated = () => {
       setExecutions(workflowService.getExecutionHistory());
     };
 
-    window.addEventListener("workflowCompleted", handleWorkflowCompleted as EventListener);
+    window.addEventListener(
+      "workflowCompleted",
+      handleWorkflowCompleted as EventListener
+    );
     window.addEventListener("leadUpdated", handleLeadUpdated);
-    
+
     return () => {
-      window.removeEventListener("workflowCompleted", handleWorkflowCompleted as EventListener);
+      window.removeEventListener(
+        "workflowCompleted",
+        handleWorkflowCompleted as EventListener
+      );
       window.removeEventListener("leadUpdated", handleLeadUpdated);
     };
   }, []);
@@ -109,26 +107,6 @@ export const WorkflowDesigner = () => {
       color: "bg-orange-500",
     },
     { value: "create_task", label: "📋 Create Task", color: "bg-purple-500" },
-    {
-      value: "schedule_followup",
-      label: "📅 Schedule Follow-up",
-      color: "bg-green-500",
-    },
-    {
-      value: "assign_rep",
-      label: "👤 Assign Rep",
-      color: "bg-indigo-500",
-    },
-    {
-      value: "send_sms",
-      label: "📱 Send SMS",
-      color: "bg-pink-500",
-    },
-    {
-      value: "create_calendar_event",
-      label: "🗓️ Create Calendar Event",
-      color: "bg-teal-500",
-    },
   ];
 
   const onConnect = useCallback(
@@ -214,36 +192,35 @@ export const WorkflowDesigner = () => {
     const workflow = { nodes, edges };
     localStorage.setItem("crm-workflow", JSON.stringify(workflow));
     toast({
-      title: "Workflow Saved",
+      title: "✅ Workflow Saved",
       description:
         "Your workflow has been saved and will auto-trigger for new leads",
+      duration: 3000,
     });
   };
 
   const loadWorkflow = () => {
-    try {
-      const savedWorkflow = localStorage.getItem("crm-workflow");
-      if (savedWorkflow) {
-        const { nodes: savedNodes, edges: savedEdges } =
-          JSON.parse(savedWorkflow);
-        setNodes(savedNodes);
-        setEdges(savedEdges);
-
+    const savedWorkflow = localStorage.getItem("crm-workflow");
+    if (savedWorkflow) {
+      try {
+        const workflow = JSON.parse(savedWorkflow);
+        setNodes(workflow.nodes || initialNodes);
+        setEdges(workflow.edges || initialEdges);
         toast({
-          title: "Workflow Loaded",
+          title: "✅ Workflow Loaded",
           description: "Your saved workflow has been loaded successfully",
         });
-      } else {
+      } catch (error) {
         toast({
-          title: "No Saved Workflow",
-          description: "No saved workflow found",
+          title: "Load Failed",
+          description: "Failed to load saved workflow",
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } else {
       toast({
-        title: "Load Failed",
-        description: "Failed to load saved workflow",
+        title: "No Saved Workflow",
+        description: "No saved workflow found",
         variant: "destructive",
       });
     }
@@ -261,13 +238,20 @@ export const WorkflowDesigner = () => {
 
   const executeWorkflow = async () => {
     setIsExecuting(true);
-    setExecutionProgress(0);
-    setExecutionMessage("Preparing workflow execution...");
-    
-    // Create progress callback
+
+    toast({
+      title: "🚀 Starting Workflow",
+      description: "Preparing workflow execution...",
+      duration: 2000,
+    });
+
+    // Create progress callback for toast messages
     const progressCallback = (progress: number, message: string) => {
-      setExecutionProgress(progress);
-      setExecutionMessage(message);
+      toast({
+        title: `⚡ Workflow Progress (${Math.round(progress)}%)`,
+        description: message,
+        duration: 1500,
+      });
     };
 
     // Get the most recent lead to demonstrate with
@@ -286,7 +270,7 @@ export const WorkflowDesigner = () => {
 
     const latestLead = data.leads[0];
     const savedWorkflow = localStorage.getItem("crm-workflow");
-    
+
     if (!savedWorkflow) {
       setIsExecuting(false);
       toast({
@@ -298,14 +282,12 @@ export const WorkflowDesigner = () => {
     }
 
     const workflow = JSON.parse(savedWorkflow);
-    const actions = workflowService.extractActionsFromWorkflow ? 
-      workflowService.extractActionsFromWorkflow(workflow) : 
-      [];
+    const actions = workflowService.extractActionsFromWorkflow(workflow);
 
     if (actions.length === 0) {
       setIsExecuting(false);
       toast({
-        title: "No Actions Found",
+        title: "❌ No Actions Found",
         description: "Please add actions to your workflow",
         variant: "destructive",
       });
@@ -313,13 +295,27 @@ export const WorkflowDesigner = () => {
     }
 
     try {
-      await workflowService.executeWorkflowForLead(latestLead.id, actions, progressCallback);
+      await workflowService.executeWorkflowForLead(
+        latestLead.id,
+        actions,
+        progressCallback
+      );
       setExecutions(workflowService.getExecutionHistory());
+
+      toast({
+        title: "✅ Workflow Executed Successfully",
+        description: `Completed workflow for ${latestLead.name}`,
+        duration: 3000,
+      });
     } catch (error) {
-      setIsExecuting(false);
-      setExecutionProgress(0);
-      setExecutionMessage("");
+      toast({
+        title: "❌ Workflow Execution Failed",
+        description: `Error: ${error}`,
+        variant: "destructive",
+      });
       console.error("Workflow execution failed:", error);
+    } finally {
+      setIsExecuting(false);
     }
   };
 
@@ -339,51 +335,6 @@ export const WorkflowDesigner = () => {
 
   return (
     <div className="space-y-6">
-      {/* Workflow Execution Progress Modal */}
-      <Dialog open={isExecuting || currentExecution !== null} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {isExecuting ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Executing Workflow
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  Workflow Completed
-                </>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              {executionMessage}
-            </div>
-            <Progress value={executionProgress} className="w-full" />
-            <div className="text-xs text-muted-foreground">
-              {Math.round(executionProgress)}% Complete
-            </div>
-            {currentExecution && (
-              <div className="mt-4 space-y-2">
-                <div className="text-sm font-medium">Results:</div>
-                <div className="space-y-1">
-                  {currentExecution.results.map((result, index) => (
-                    <div
-                      key={index}
-                      className="text-xs bg-muted p-2 rounded"
-                    >
-                      ✅ {result.message}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Controls */}
       <Card>
         <CardHeader>
@@ -433,10 +384,12 @@ export const WorkflowDesigner = () => {
               for new leads
             </p>
             <p>
-              • <strong>7 Different Actions:</strong> Email, SMS, Tasks, Follow-ups, Rep Assignment, Status Updates, Calendar Events
+              • <strong>3 Core Actions:</strong> Send Email, Update Status,
+              Create Task
             </p>
             <p>
-              • <strong>Progress Tracking:</strong> Real-time execution with live progress updates
+              • <strong>Progress Tracking:</strong> Real-time execution with
+              live progress updates
             </p>
           </div>
         </CardContent>
@@ -535,7 +488,9 @@ export const WorkflowDesigner = () => {
                       className="p-3 border rounded-lg space-y-2"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">{execution.leadName}</span>
+                        <span className="text-sm font-medium">
+                          {execution.leadName}
+                        </span>
                         {getStatusBadge(execution.status)}
                       </div>
                       <div className="text-xs text-muted-foreground">
