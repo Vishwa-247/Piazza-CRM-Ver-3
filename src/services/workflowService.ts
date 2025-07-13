@@ -240,7 +240,7 @@ class WorkflowService {
     return result;
   }
 
-  // Send email action with preview
+  // Send email action
   private async sendEmail(lead: Lead, result: WorkflowResult): Promise<void> {
     const emailTemplate = this.getEmailTemplate(lead);
     const subject = emailTemplate.subject.replace("{{name}}", lead.name);
@@ -249,20 +249,65 @@ class WorkflowService {
       .replace("{{email}}", lead.email)
       .replace("{{date}}", new Date().toLocaleDateString());
 
-    // In a real app, this would send the email via API
-    // For demo purposes, we'll simulate sending
-    result.message = `📧 Email sent: "${subject}" → ${lead.email}`;
-    result.data = { subject, body, to: lead.email };
+    // Try to send real email if configured
+    const { emailService } = await import("./emailService");
+    
+    if (emailService.isConfigured()) {
+      try {
+        const emailData = {
+          to: lead.email,
+          toName: lead.name,
+          subject: subject,
+          message: body,
+        };
 
-    console.log(`📧 Email sent for ${lead.name}:`, { subject, to: lead.email });
+        const emailSent = await emailService.sendEmail(emailData);
+        
+        if (emailSent) {
+          result.message = `📧 Email sent successfully: "${subject}" → ${lead.email}`;
+          result.data = { subject, body, to: lead.email, status: 'sent' };
+          
+          console.log(`📧 Real email sent to ${lead.name}:`, { subject, to: lead.email });
+          
+          // Show toast notification for real email sent
+          const { toast } = await import("@/hooks/use-toast");
+          toast({
+            title: "📧 Real Email Sent",
+            description: `Email successfully sent to ${lead.name}`,
+            duration: 3000,
+          });
+        } else {
+          throw new Error("Email service returned false");
+        }
+      } catch (error) {
+        console.error("Failed to send real email:", error);
+        
+        // Fall back to simulation
+        result.message = `📧 Email simulated (sending failed): "${subject}" → ${lead.email}`;
+        result.data = { subject, body, to: lead.email, status: 'simulated', error: String(error) };
+        
+        const { toast } = await import("@/hooks/use-toast");
+        toast({
+          title: "⚠️ Email Simulation",
+          description: `Failed to send real email to ${lead.name} - fell back to simulation`,
+          duration: 3000,
+        });
+      }
+    } else {
+      // Email not configured - simulate only
+      result.message = `📧 Email simulated: "${subject}" → ${lead.email}`;
+      result.data = { subject, body, to: lead.email, status: 'simulated' };
 
-    // Show toast notification for email sent
-    const { toast } = await import("@/hooks/use-toast");
-    toast({
-      title: "📧 Email Sent",
-      description: `Welcome email sent to ${lead.name}`,
-      duration: 3000,
-    });
+      console.log(`📧 Email simulated for ${lead.name}:`, { subject, to: lead.email });
+      
+      // Show toast notification for simulated email
+      const { toast } = await import("@/hooks/use-toast");
+      toast({
+        title: "📧 Email Simulated",
+        description: `Email simulated for ${lead.name} (Configure email in Settings to send real emails)`,
+        duration: 3000,
+      });
+    }
   }
 
   // Update lead status action
