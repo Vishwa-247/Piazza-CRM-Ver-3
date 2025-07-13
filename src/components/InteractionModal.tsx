@@ -500,27 +500,27 @@
 // };
 
 
-import { useState, useRef, useEffect } from "react";
-import {
-  Send,
-  Bot,
-  User,
-  Clock,
-  Lightbulb,
-  FileText,
-  Mail,
-  Trash2,
-} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Bot,
+  Clock,
+  FileText,
+  Lightbulb,
+  Mail,
+  Send,
+  Trash2,
+  User,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Lead } from "./Dashboard";
 
 interface Message {
@@ -735,11 +735,7 @@ export const InteractionModal = ({
               </Button>
               <Badge
                 className={
-                  lead.status === "new"
-                    ? "badge-new"
-                    : lead.status === "contacted"
-                    ? "badge-contacted"
-                    : "badge-converted"
+                  lead.status === "new" ? "badge-new" : "badge-contacted"
                 }
               >
                 {lead.status}

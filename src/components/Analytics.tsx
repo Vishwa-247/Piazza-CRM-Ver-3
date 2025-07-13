@@ -339,37 +339,37 @@
 
 
 
-import { useMemo, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
 import {
-  TrendingUp,
-  TrendingDown,
-  Users,
-  Target,
-  Mail,
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Mail,
+  Target,
+  TrendingDown,
+  TrendingUp,
+  Users,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Lead } from "./Dashboard";
+import { useMemo, useState } from "react";
 import {
-  AreaChart,
   Area,
-  BarChart,
+  AreaChart,
   Bar,
-  PieChart,
-  Pie,
+  BarChart,
+  CartesianGrid,
   Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend
 } from "recharts";
+import { Lead } from "./Dashboard";
 
 interface AnalyticsProps {
   leads: Lead[];
@@ -384,10 +384,8 @@ export const Analytics = ({ leads }: AnalyticsProps) => {
     const totalLeads = leads.length;
     const newLeads = leads.filter((l) => l.status === "new").length;
     const contactedLeads = leads.filter((l) => l.status === "contacted").length;
-    const convertedLeads = leads.filter((l) => l.status === "converted").length;
-
     const conversionRate =
-      totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
+      totalLeads > 0 ? (contactedLeads / totalLeads) * 100 : 0;
     const contactRate =
       totalLeads > 0 ? (contactedLeads / totalLeads) * 100 : 0;
 
@@ -429,14 +427,12 @@ export const Analytics = ({ leads }: AnalyticsProps) => {
     const statusData = [
       { name: "New", value: newLeads, color: "#10B981" },
       { name: "Contacted", value: contactedLeads, color: "#3B82F6" },
-      { name: "Converted", value: convertedLeads, color: "#8B5CF6" },
     ].filter((item) => item.value > 0);
 
     return {
       totalLeads,
       newLeads,
       contactedLeads,
-      convertedLeads,
       conversionRate,
       contactRate,
       timeData,

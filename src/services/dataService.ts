@@ -4,7 +4,7 @@ export interface Lead {
   name: string;
   email: string;
   phone: string;
-  status: 'new' | 'contacted' | 'converted';
+  status: "new" | "contacted";
   source: string;
   createdAt: Date;
 }
@@ -23,10 +23,12 @@ export const loadData = (): AppData => {
     if (stored) {
       const data = JSON.parse(stored);
       // Convert date strings back to Date objects
-      data.leads = data.leads.map((lead: any) => ({
-        ...lead,
-        createdAt: new Date(lead.createdAt),
-      }));
+      data.leads = data.leads.map(
+        (lead: Omit<Lead, "createdAt"> & { createdAt: string }) => ({
+          ...lead,
+          createdAt: new Date(lead.createdAt),
+        })
+      );
       return data;
     }
   } catch (error) {
