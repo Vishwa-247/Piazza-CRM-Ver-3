@@ -639,13 +639,79 @@ export const InteractionModal = ({
     }, 1000);
   };
 
-  const openEmailClient = () => {
-    if (lead?.email) {
-      const subject = encodeURIComponent(`Follow-up with ${lead.name}`);
-      const body = encodeURIComponent(
-        `Hi ${lead.name},\n\nI wanted to follow up on our recent conversation.\n\nBest regards`
-      );
-      window.open(`mailto:${lead.email}?subject=${subject}&body=${body}`);
+  const openEmailClient = async () => {
+    if (!lead?.email) return;
+
+    try {
+      // Import email service
+      const { emailService } = await import("@/services/emailService");
+
+      if (emailService.isConfigured()) {
+        const emailData = {
+          to: lead.email,
+          toName: lead.name,
+          subject: `Follow-up with ${lead.name}`,
+          message: `Hi ${lead.name},\n\nI wanted to follow up on our recent conversation.\n\nBest regards`,
+        };
+
+        const success = await emailService.sendEmail(emailData);
+
+        if (success) {
+          // Add to messages
+          const emailMessage: Message = {
+            id: Date.now().toString(),
+            content: `✅ Email sent successfully to ${lead.name} at ${lead.email}`,
+            sender: "ai",
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, emailMessage]);
+
+          // Show toast
+          const { toast } = await import("@/hooks/use-toast");
+          toast({
+            title: "📧 Email Sent Successfully",
+            description: `Follow-up email sent to ${lead.name}`,
+            duration: 3000,
+          });
+        } else {
+          throw new Error("Email service failed to send");
+        }
+      } else {
+        // Fallback to mailto if email not configured
+        const subject = encodeURIComponent(`Follow-up with ${lead.name}`);
+        const body = encodeURIComponent(
+          `Hi ${lead.name},\n\nI wanted to follow up on our recent conversation.\n\nBest regards`
+        );
+        window.open(`mailto:${lead.email}?subject=${subject}&body=${body}`);
+
+        // Add message about email configuration
+        const configMessage: Message = {
+          id: Date.now().toString(),
+          content: `⚠️ Opened default email client. To send emails directly from CRM, configure email settings in Settings → Email`,
+          sender: "ai",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, configMessage]);
+      }
+    } catch (error) {
+      console.error("Failed to send email:", error);
+
+      // Add error message
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        content: `❌ Failed to send email to ${lead.name}. Please try again or check your email configuration.`,
+        sender: "ai",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+
+      // Show error toast
+      const { toast } = await import("@/hooks/use-toast");
+      toast({
+        title: "❌ Email Failed",
+        description: "Failed to send email. Please check configuration.",
+        variant: "destructive",
+      });
     }
   };
 
