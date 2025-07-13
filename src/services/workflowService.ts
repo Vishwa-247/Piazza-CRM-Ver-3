@@ -473,27 +473,41 @@ class WorkflowService {
     subject: string;
     body: string;
   } {
-    // In real app, this would be more sophisticated
+    // Professional email template
     return {
-      name: "Welcome Email",
-      subject: "Welcome to Our CRM, {{name}}!",
-      body: `Hi {{name}},
+      name: "Professional Welcome Email",
+      subject: "Thank you for your interest, {{name}} - Next Steps",
+      body: `Dear {{name}},
 
-Thank you for your interest in our services! We're excited to help you achieve your goals.
+Thank you for reaching out to us. We appreciate your interest in our services and are excited about the opportunity to work with you.
 
-Here's what happens next:
-• One of our representatives will contact you within 24 hours
-• We'll schedule a consultation to understand your needs
-• You'll receive a custom proposal tailored to your requirements
+**What to Expect:**
+• Our dedicated team will review your inquiry within the next 24 hours
+• You'll receive a personalized consultation call to discuss your specific needs
+• We'll prepare a customized solution proposal based on your requirements
+• Ongoing support and guidance throughout our partnership
 
-If you have any immediate questions, feel free to reply to this email or call us at (555) 123-4567.
+**Next Steps:**
+Our senior consultant will contact you within 24 hours to schedule a detailed discussion about your goals and how we can best serve your needs.
+
+**Contact Information:**
+📧 Email: sales@company.com
+📞 Phone: (555) 123-4567
+🌐 Website: www.company.com
+
+If you have any urgent questions or need immediate assistance, please don't hesitate to reach out directly.
+
+We look forward to helping you achieve your objectives.
 
 Best regards,
-Sales Team
-CRM Company
+
+**Sarah Johnson**
+Senior Sales Consultant
+CRM Solutions Inc.
 
 ---
-This email was sent to {{email}} on {{date}}.`,
+*This email was sent to {{email}} on {{date}}*
+*To unsubscribe, reply with "UNSUBSCRIBE" in the subject line*`,
     };
   }
 

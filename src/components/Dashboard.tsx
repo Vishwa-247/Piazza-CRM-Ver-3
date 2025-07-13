@@ -201,6 +201,30 @@ export const Dashboard = ({
             </div>
           </CardContent>
         </Card>
+
+        <Card className="border-slate-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Conversion Rate
+                </p>
+                <p className="text-3xl font-bold text-blue-600">
+                  {leads.length > 0
+                    ? Math.round((statusCounts.contacted / leads.length) * 100)
+                    : 0}
+                  %
+                </p>
+                <div className="flex items-center mt-2 text-sm text-slate-500">
+                  <span>Contact success rate</span>
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Lead Management Section */}

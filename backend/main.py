@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 # Import our modules
 from hybrid_ocr_processor import HybridOCRProcessor
+from llm_service import llm_service
 from models import HealthResponse, LeadData, ProcessingResponse
 
 # Setup logging
@@ -461,6 +462,74 @@ async def test_email_connection():
     except Exception as e:
         logger.error(f"Email test error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Email test failed: {str(e)}")
+
+# LLM endpoints
+@app.post("/api/llm/chat")
+async def chat_with_llm(chat_data: Dict[str, Any]):
+    """Chat with LLM about a lead"""
+    try:
+        user_message = chat_data.get("message")
+        lead_data = chat_data.get("lead_data", {})
+        conversation_history = chat_data.get("conversation_history", [])
+        
+        if not user_message:
+            raise HTTPException(status_code=400, detail="Message is required")
+        
+        if not lead_data:
+            raise HTTPException(status_code=400, detail="Lead data is required")
+        
+        result = llm_service.generate_response(user_message, lead_data, conversation_history)
+        
+        if result["success"]:
+            logger.info(f"LLM chat response generated for lead {lead_data.get('name', 'Unknown')}")
+            return result
+        else:
+            logger.error(f"LLM chat failed: {result.get('message')}")
+            raise HTTPException(status_code=500, detail=result.get("message", "LLM chat failed"))
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"LLM chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"LLM chat failed: {str(e)}")
+
+@app.post("/api/llm/analyze-lead")
+async def analyze_lead_with_llm(lead_data: Dict[str, Any]):
+    """Analyze lead with LLM"""
+    try:
+        if not lead_data:
+            raise HTTPException(status_code=400, detail="Lead data is required")
+        
+        result = llm_service.analyze_lead(lead_data)
+        
+        if result["success"]:
+            logger.info(f"LLM lead analysis completed for {lead_data.get('name', 'Unknown')}")
+            return result
+        else:
+            logger.error(f"LLM lead analysis failed: {result.get('message')}")
+            raise HTTPException(status_code=500, detail=result.get("message", "LLM analysis failed"))
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"LLM analysis error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"LLM analysis failed: {str(e)}")
+
+@app.get("/api/llm/status")
+async def get_llm_status():
+    """Check LLM service status"""
+    try:
+        is_available = llm_service.is_available()
+        return {
+            "available": is_available,
+            "message": "LLM service is available" if is_available else "LLM service is not available"
+        }
+    except Exception as e:
+        logger.error(f"LLM status check error: {str(e)}")
+        return {
+            "available": False,
+            "message": f"LLM status check failed: {str(e)}"
+        }
 
 if __name__ == "__main__":
     logger.info("🚀 === STARTING UVICORN SERVER ===")
