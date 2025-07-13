@@ -1,6 +1,5 @@
 import { Analytics } from "@/components/Analytics";
 import { Dashboard } from "@/components/Dashboard";
-import { EmailPreview } from "@/components/EmailPreview";
 import { Header } from "@/components/Header";
 import { LandingPage } from "@/components/LandingPage";
 import { LeadCreation } from "@/components/LeadCreation";
@@ -95,8 +94,6 @@ const Index = () => {
         return <WorkflowDesigner />;
       case "analytics":
         return <Analytics leads={leads} />;
-      case "emails":
-        return <EmailPreview />;
       case "settings":
         return <Settings />;
       default:

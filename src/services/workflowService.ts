@@ -1,9 +1,16 @@
-import { Lead } from "./dataService";
 import { toast } from "@/hooks/use-toast";
+import { Lead } from "./dataService";
 
 export interface WorkflowAction {
   id: string;
-  type: "send_email" | "update_status" | "create_task" | "schedule_followup" | "assign_rep" | "send_sms" | "create_calendar_event";
+  type:
+    | "send_email"
+    | "update_status"
+    | "create_task"
+    | "schedule_followup"
+    | "assign_rep"
+    | "send_sms"
+    | "create_calendar_event";
   label: string;
   config?: Record<string, unknown>;
 }
@@ -28,14 +35,6 @@ export interface WorkflowResult {
   message: string;
   timestamp: Date;
   data?: Record<string, unknown>;
-}
-
-export interface EmailPreview {
-  to: string;
-  subject: string;
-  body: string;
-  template: string;
-  timestamp: Date;
 }
 
 export interface WorkflowTask {
@@ -73,9 +72,12 @@ export interface SavedWorkflow {
 
 class WorkflowService {
   private executions: WorkflowExecution[] = [];
-  private emailPreviews: EmailPreview[] = [];
+
   private followUpTasks: FollowUpTask[] = [];
-  private progressCallbacks: Map<string, (progress: number, message: string) => void> = new Map();
+  private progressCallbacks: Map<
+    string,
+    (progress: number, message: string) => void
+  > = new Map();
 
   // Execute workflow for a specific lead
   async executeWorkflowForLead(
@@ -96,31 +98,41 @@ class WorkflowService {
       status: "running",
       startTime: new Date(),
       results: [],
-      progress: 0
+      progress: 0,
     };
 
     this.executions.push(execution);
-    
+
     if (progressCallback) {
       this.progressCallbacks.set(execution.id, progressCallback);
     }
 
-    console.log(`🚀 Starting workflow execution for lead ${leadData.name} (${leadId})`);
-    this.updateProgress(execution.id, 0, `Starting workflow for ${leadData.name}`);
+    console.log(
+      `🚀 Starting workflow execution for lead ${leadData.name} (${leadId})`
+    );
+    this.updateProgress(
+      execution.id,
+      0,
+      `Starting workflow for ${leadData.name}`
+    );
 
     try {
       // Execute each action in sequence
       for (let i = 0; i < actions.length; i++) {
         const action = actions[i];
         const progress = ((i + 1) / actions.length) * 100;
-        
-        this.updateProgress(execution.id, progress, `Executing: ${action.label}`);
-        
+
+        this.updateProgress(
+          execution.id,
+          progress,
+          `Executing: ${action.label}`
+        );
+
         const result = await this.executeAction(action, leadData, execution);
         execution.results.push(result);
-        
+
         // Add delay between actions to show progress
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
       }
 
       execution.status = "completed";
@@ -139,23 +151,26 @@ class WorkflowService {
 
       // Trigger UI update
       this.notifyWorkflowComplete(execution);
-
     } catch (error) {
       execution.status = "failed";
       execution.endTime = new Date();
-      
+
       const errorResult: WorkflowResult = {
         actionId: "error",
         actionType: "error",
         actionLabel: "Workflow Error",
         status: "failed",
         message: `❌ Error: ${error}`,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      
+
       execution.results.push(errorResult);
 
-      this.updateProgress(execution.id, execution.progress, `Workflow failed: ${error}`);
+      this.updateProgress(
+        execution.id,
+        execution.progress,
+        `Workflow failed: ${error}`
+      );
 
       console.error(`❌ Workflow failed:`, error);
 
@@ -173,14 +188,18 @@ class WorkflowService {
   }
 
   // Update workflow progress
-  private updateProgress(executionId: string, progress: number, message: string): void {
+  private updateProgress(
+    executionId: string,
+    progress: number,
+    message: string
+  ): void {
     const callback = this.progressCallbacks.get(executionId);
     if (callback) {
       callback(progress, message);
     }
 
     // Update execution progress
-    const execution = this.executions.find(e => e.id === executionId);
+    const execution = this.executions.find((e) => e.id === executionId);
     if (execution) {
       execution.progress = progress;
     }
@@ -200,7 +219,7 @@ class WorkflowService {
       actionLabel: action.label,
       status: "success",
       message: "",
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     try {
@@ -247,39 +266,33 @@ class WorkflowService {
   // Send email action with preview
   private async sendEmail(lead: Lead, result: WorkflowResult): Promise<void> {
     const emailTemplate = this.getEmailTemplate(lead);
-    const subject = emailTemplate.subject.replace('{{name}}', lead.name);
+    const subject = emailTemplate.subject.replace("{{name}}", lead.name);
     const body = emailTemplate.body
-      .replace('{{name}}', lead.name)
-      .replace('{{email}}', lead.email)
-      .replace('{{date}}', new Date().toLocaleDateString());
-
-    // Create email preview
-    const emailPreview: EmailPreview = {
-      to: lead.email,
-      subject,
-      body,
-      template: emailTemplate.name,
-      timestamp: new Date()
-    };
-
-    this.emailPreviews.push(emailPreview);
+      .replace("{{name}}", lead.name)
+      .replace("{{email}}", lead.email)
+      .replace("{{date}}", new Date().toLocaleDateString());
 
     // In a real app, this would send the email via API
-    // For demo purposes, we'll show a preview
-    result.message = `📧 Email prepared: "${subject}" → ${lead.email}`;
-    result.data = { emailPreview };
-    
-    console.log(`📧 Email preview created for ${lead.name}:`, emailPreview);
+    // For demo purposes, we'll simulate sending
+    result.message = `📧 Email sent: "${subject}" → ${lead.email}`;
+    result.data = { subject, body, to: lead.email };
+
+    console.log(`📧 Email sent for ${lead.name}:`, { subject, to: lead.email });
   }
 
   // Update lead status action
-  private async updateLeadStatus(lead: Lead, result: WorkflowResult): Promise<void> {
+  private async updateLeadStatus(
+    lead: Lead,
+    result: WorkflowResult
+  ): Promise<void> {
     const { updateLead } = await import("./dataService");
-    
+
     const newStatus = "contacted";
     updateLead(lead.id, { status: newStatus });
 
-    result.message = `🔄 Status updated: ${lead.name} → ${newStatus.toUpperCase()}`;
+    result.message = `🔄 Status updated: ${
+      lead.name
+    } → ${newStatus.toUpperCase()}`;
     result.data = { oldStatus: lead.status, newStatus };
 
     // Trigger UI update event
@@ -300,15 +313,20 @@ class WorkflowService {
       dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
       status: "pending",
       priority: "medium",
-      createdAt: new Date()
+      createdAt: new Date(),
     };
 
-    result.message = `📋 Task created: "${task.title}" (Due: ${task.dueDate.toLocaleDateString()})`;
+    result.message = `📋 Task created: "${
+      task.title
+    }" (Due: ${task.dueDate.toLocaleDateString()})`;
     result.data = { task };
   }
 
   // Schedule follow-up action
-  private async scheduleFollowup(lead: Lead, result: WorkflowResult): Promise<void> {
+  private async scheduleFollowup(
+    lead: Lead,
+    result: WorkflowResult
+  ): Promise<void> {
     const followUpDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 1 week from now
     const followUp: FollowUpTask = {
       id: `followup_${Date.now()}`,
@@ -317,23 +335,25 @@ class WorkflowService {
       scheduledDate: followUpDate,
       type: "email",
       status: "scheduled",
-      createdAt: new Date()
+      createdAt: new Date(),
     };
 
     this.followUpTasks.push(followUp);
 
-    result.message = `📅 Follow-up scheduled: ${lead.name} on ${followUpDate.toLocaleDateString()}`;
+    result.message = `📅 Follow-up scheduled: ${
+      lead.name
+    } on ${followUpDate.toLocaleDateString()}`;
     result.data = { followUp };
   }
 
   // Assign representative action
   private async assignRep(lead: Lead, result: WorkflowResult): Promise<void> {
     const { updateLead } = await import("./dataService");
-    
+
     // Assign to a random rep (in real app, this would be based on territories, availability, etc.)
     const reps = ["Sarah Johnson", "Mike Chen", "Emma Williams", "David Brown"];
     const assignedRep = reps[Math.floor(Math.random() * reps.length)];
-    
+
     // Note: In a real app, assignedRep would be part of the Lead interface
     // For demo purposes, we'll store it in the lead data
     updateLead(lead.id, { source: `${lead.source} | Rep: ${assignedRep}` });
@@ -345,14 +365,17 @@ class WorkflowService {
   // Send SMS action
   private async sendSMS(lead: Lead, result: WorkflowResult): Promise<void> {
     const smsMessage = `Hi ${lead.name}, thanks for your interest! We'll be in touch soon. - CRM Team`;
-    
+
     // In real app, this would send via SMS API
     result.message = `📱 SMS prepared: "${smsMessage}" → ${lead.phone}`;
     result.data = { message: smsMessage, phone: lead.phone };
   }
 
   // Create calendar event action
-  private async createCalendarEvent(lead: Lead, result: WorkflowResult): Promise<void> {
+  private async createCalendarEvent(
+    lead: Lead,
+    result: WorkflowResult
+  ): Promise<void> {
     const eventDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
     const event = {
       id: `event_${Date.now()}`,
@@ -362,15 +385,21 @@ class WorkflowService {
       endTime: new Date(eventDate.getTime() + 30 * 60 * 1000), // 30 minutes
       attendees: [lead.email],
       location: "Video Call",
-      leadId: lead.id
+      leadId: lead.id,
     };
 
-    result.message = `📅 Calendar event created: "${event.title}" on ${eventDate.toLocaleDateString()}`;
+    result.message = `📅 Calendar event created: "${
+      event.title
+    }" on ${eventDate.toLocaleDateString()}`;
     result.data = { event };
   }
 
   // Get email template based on lead
-  private getEmailTemplate(lead: Lead): { name: string; subject: string; body: string } {
+  private getEmailTemplate(lead: Lead): {
+    name: string;
+    subject: string;
+    body: string;
+  } {
     // In real app, this would be more sophisticated
     return {
       name: "Welcome Email",
@@ -391,7 +420,7 @@ Sales Team
 CRM Company
 
 ---
-This email was sent to {{email}} on {{date}}.`
+This email was sent to {{email}} on {{date}}.`,
     };
   }
 
@@ -422,17 +451,20 @@ This email was sent to {{email}} on {{date}}.`
   }
 
   // Extract actions from saved workflow
-  private extractActionsFromWorkflow(workflow: SavedWorkflow): WorkflowAction[] {
+  private extractActionsFromWorkflow(
+    workflow: SavedWorkflow
+  ): WorkflowAction[] {
     const actions: WorkflowAction[] = [];
 
     // Find action nodes (exclude trigger nodes)
     const actionNodes = workflow.nodes.filter(
-      (node: WorkflowNode) => node.id !== "1" && !node.data.label.includes("Lead Created")
+      (node: WorkflowNode) =>
+        node.id !== "1" && !node.data.label.includes("Lead Created")
     );
 
     actionNodes.forEach((node: WorkflowNode) => {
       const label = node.data.label;
-      
+
       if (label.includes("Send Email")) {
         actions.push({
           id: node.id,
@@ -495,7 +527,7 @@ This email was sent to {{email}} on {{date}}.`
   private notifyWorkflowComplete(execution: WorkflowExecution): void {
     window.dispatchEvent(
       new CustomEvent("workflowCompleted", {
-        detail: execution
+        detail: execution,
       })
     );
   }
@@ -506,9 +538,6 @@ This email was sent to {{email}} on {{date}}.`
   }
 
   // Get email previews
-  getEmailPreviews(): EmailPreview[] {
-    return [...this.emailPreviews].reverse();
-  }
 
   // Get follow-up tasks
   getFollowUpTasks(): FollowUpTask[] {
@@ -573,25 +602,43 @@ This email was sent to {{email}} on {{date}}.`
     tasksCreated: number;
     followUpsScheduled: number;
   } {
-    const completedExecutions = this.executions.filter(e => e.status === "completed");
-    const failedExecutions = this.executions.filter(e => e.status === "failed");
-    
-    const avgExecutionTime = completedExecutions.length > 0 
-      ? completedExecutions.reduce((sum, e) => {
-          const duration = e.endTime ? e.endTime.getTime() - e.startTime.getTime() : 0;
-          return sum + duration;
-        }, 0) / completedExecutions.length
-      : 0;
+    const completedExecutions = this.executions.filter(
+      (e) => e.status === "completed"
+    );
+    const failedExecutions = this.executions.filter(
+      (e) => e.status === "failed"
+    );
+
+    const avgExecutionTime =
+      completedExecutions.length > 0
+        ? completedExecutions.reduce((sum, e) => {
+            const duration = e.endTime
+              ? e.endTime.getTime() - e.startTime.getTime()
+              : 0;
+            return sum + duration;
+          }, 0) / completedExecutions.length
+        : 0;
 
     return {
       totalExecutions: this.executions.length,
       completedExecutions: completedExecutions.length,
       failedExecutions: failedExecutions.length,
-      successRate: this.executions.length > 0 ? (completedExecutions.length / this.executions.length) * 100 : 0,
+      successRate:
+        this.executions.length > 0
+          ? (completedExecutions.length / this.executions.length) * 100
+          : 0,
       avgExecutionTime: Math.round(avgExecutionTime / 1000), // Convert to seconds
-      emailsSent: this.emailPreviews.length,
-      tasksCreated: this.executions.reduce((sum, e) => sum + e.results.filter(r => r.actionType === "create_task").length, 0),
-      followUpsScheduled: this.followUpTasks.length
+      emailsSent: this.executions.reduce(
+        (sum, e) =>
+          sum + e.results.filter((r) => r.actionType === "send_email").length,
+        0
+      ),
+      tasksCreated: this.executions.reduce(
+        (sum, e) =>
+          sum + e.results.filter((r) => r.actionType === "create_task").length,
+        0
+      ),
+      followUpsScheduled: this.followUpTasks.length,
     };
   }
 }

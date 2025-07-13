@@ -21,7 +21,6 @@ export const Header = ({ activeTab, onTabChange, onLogout }: HeaderProps) => {
     { id: "create", label: "Create Lead" },
     { id: "workflows", label: "Workflows" },
     { id: "analytics", label: "Analytics" },
-    { id: "emails", label: "Email Preview" },
   ];
 
   return (
@@ -84,17 +83,6 @@ export const Header = ({ activeTab, onTabChange, onLogout }: HeaderProps) => {
               onClick={() => onTabChange("analytics")}
             >
               Analytics
-            </Button>
-            <Button
-              variant={activeTab === "emails" ? "default" : "ghost"}
-              className={`px-4 ${
-                activeTab === "emails"
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600"
-              }`}
-              onClick={() => onTabChange("emails")}
-            >
-              Email Preview
             </Button>
           </nav>
 
