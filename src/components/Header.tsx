@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, Plus } from "lucide-react";
+import { Menu, Plus, Settings } from "lucide-react";
 import { useState } from "react";
 
 interface HeaderProps {
@@ -34,9 +34,7 @@ export const Header = ({ activeTab, onTabChange, onLogout }: HeaderProps) => {
             <div className="h-10 w-10 rounded-lg bg-slate-900 flex items-center justify-center mr-4">
               <span className="text-white font-bold text-sm">MC</span>
             </div>
-            <span className="text-xl font-semibold text-slate-900">
-              Mini-CRM
-            </span>
+            <span className="text-xl font-bold text-slate-900">Mini CRM</span>
           </button>
 
           <nav className="hidden md:flex items-center space-x-8">
@@ -86,7 +84,21 @@ export const Header = ({ activeTab, onTabChange, onLogout }: HeaderProps) => {
             </Button>
           </nav>
 
-          <div className="flex items-center">
+          <div className="flex items-center space-x-2">
+            {/* Settings icon button */}
+            <Button
+              variant={activeTab === "settings" ? "default" : "ghost"}
+              size="icon"
+              className={`${
+                activeTab === "settings"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+              onClick={() => onTabChange("settings")}
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+
             {/* Mobile menu button */}
             <Button
               variant="ghost"
@@ -122,6 +134,22 @@ export const Header = ({ activeTab, onTabChange, onLogout }: HeaderProps) => {
                 {tab.label}
               </Button>
             ))}
+            {/* Settings option in mobile menu */}
+            <Button
+              variant={activeTab === "settings" ? "default" : "ghost"}
+              className={`justify-start ${
+                activeTab === "settings"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              }`}
+              onClick={() => {
+                onTabChange("settings");
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </Button>
           </nav>
         </div>
       )}
