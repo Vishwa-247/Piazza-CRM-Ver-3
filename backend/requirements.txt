@@ -1,0 +1,23 @@
+
+# FastAPI and server dependencies
+fastapi==0.110.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.9
+aiofiles==23.2.1
+
+# OCR and image processing
+pytesseract==0.3.10
+Pillow==10.2.0
+opencv-python==4.9.0.80
+PyMuPDF==1.23.26
+
+# Data validation and utilities
+pydantic[email]==2.5.3
+python-dotenv==1.0.1
+
+# Enhanced OCR processing
+pdf2image==1.17.0
+rapidfuzz==3.6.1
+groq==0.4.2
+httpx==0.26.0
+numpy==1.26.4

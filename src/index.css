@@ -1,0 +1,166 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Professional Mini-CRM Design System - Minimalist White Theme */
+
+@layer base {
+  :root {
+    /* Neutral Palette - Professional Gray Scale */
+    --primary: 210 14% 9%; /* slate-900 #0F172A */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 210 14% 13%;
+    
+    --secondary: 210 40% 98%; /* slate-50 #F8FAFC */
+    --secondary-foreground: 210 14% 9%;
+    --secondary-hover: 210 40% 96%;
+    
+    --success: 160 84% 39%; /* emerald-600 #059669 */
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 45 93% 47%; /* amber-500 #F59E0B */
+    --warning-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%; /* red-500 #EF4444 */
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Base Colors - Clean White Theme */
+    --background: 0 0% 100%;
+    --foreground: 210 14% 9%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 210 14% 9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 14% 9%;
+    
+    --muted: 210 40% 98%;
+    --muted-foreground: 210 6% 46%;
+    
+    --accent: 210 40% 96%;
+    --accent-foreground: 210 14% 9%;
+    
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 210 14% 9%;
+    
+    /* Status Colors */
+    --status-new: 160 84% 39%;
+    --status-contacted: 45 93% 47%;
+    --status-converted: 210 14% 9%;
+    
+    /* Professional Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
+    
+    /* Smooth Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --primary: 210 40% 98%;
+    --primary-foreground: 210 14% 9%;
+    --primary-hover: 210 40% 96%;
+    
+    --secondary: 210 14% 13%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 210 14% 16%;
+    
+    --background: 210 14% 7%;
+    --foreground: 210 40% 98%;
+    
+    --card: 210 14% 9%;
+    --card-foreground: 210 40% 98%;
+    
+    --popover: 210 14% 9%;
+    --popover-foreground: 210 40% 98%;
+    
+    --muted: 210 14% 13%;
+    --muted-foreground: 215 20% 65%;
+    
+    --accent: 210 14% 13%;
+    --accent-foreground: 210 40% 98%;
+    
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 210 14% 18%;
+    --input: 210 14% 18%;
+    --ring: 210 40% 98%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+}
+
+@layer components {
+  /* Professional Buttons */
+  .btn-primary {
+    @apply bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary hover:bg-secondary/90 text-secondary-foreground transition-all duration-300;
+  }
+  
+  /* Status Badges */
+  .badge-new {
+    @apply bg-emerald-100 text-emerald-800 border-emerald-200;
+  }
+  
+  .badge-contacted {
+    @apply bg-amber-100 text-amber-800 border-amber-200;
+  }
+  
+  .badge-converted {
+    @apply bg-slate-100 text-slate-800 border-slate-200;
+  }
+  
+  /* Interactive Elements */
+  .hover-lift {
+    @apply transition-all duration-300 hover:shadow-md hover:-translate-y-1;
+  }
+  
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400;
+  }
+  
+  /* Clean Cards */
+  .card-clean {
+    @apply bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300;
+  }
+}
