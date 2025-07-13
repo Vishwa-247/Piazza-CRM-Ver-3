@@ -1,4 +1,4 @@
-# 🚀 Piazza CRM Ver 3 - AI-Powered Lead Management
+# 🚀 Piazza CRM  - AI-Powered Lead Management
 
 A modern, AI-powered Customer Relationship Management (CRM) system with intelligent document processing, automated workflows, and real-time LLM interactions.
 
