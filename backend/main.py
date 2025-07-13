@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 import aiofiles
 import uvicorn
 from config import settings
+from email_service import email_service
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -40,7 +41,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "*"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:8081", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -375,6 +376,91 @@ async def get_supported_formats():
             "Confidence scoring"
         ]
     }
+
+# Email endpoints
+@app.post("/api/email/configure")
+async def configure_email(email_data: Dict[str, str]):
+    """Configure email settings"""
+    try:
+        email = email_data.get("email")
+        password = email_data.get("password")
+        name = email_data.get("name", "Piazza CRM")
+        
+        if not email or not password:
+            raise HTTPException(status_code=400, detail="Email and password are required")
+        
+        email_service.configure_email(email, password, name)
+        
+        logger.info(f"Email service configured for: {email}")
+        
+        return {
+            "success": True,
+            "message": "Email configuration saved successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Email configuration error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to configure email: {str(e)}")
+
+@app.post("/api/email/send")
+async def send_email(email_data: Dict[str, str]):
+    """Send email using SMTP"""
+    try:
+        to_email = email_data.get("to_email")
+        to_name = email_data.get("to_name")
+        subject = email_data.get("subject")
+        message = email_data.get("message")
+        
+        if not all([to_email, to_name, subject, message]):
+            raise HTTPException(status_code=400, detail="All email fields are required")
+        
+        result = email_service.send_email(to_email, to_name, subject, message)
+        
+        if result["success"]:
+            logger.info(f"Email sent successfully to {to_email}")
+            return result
+        else:
+            logger.error(f"Failed to send email: {result.get('message')}")
+            # Return detailed error information
+            error_detail = {
+                "success": False,
+                "message": result.get("message", "Failed to send email"),
+                "error": result.get("error", ""),
+                "help": result.get("help", "")
+            }
+            raise HTTPException(status_code=500, detail=error_detail)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Email sending error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+
+@app.post("/api/email/test")
+async def test_email_connection():
+    """Test SMTP connection"""
+    try:
+        result = email_service.test_connection()
+        
+        if result["success"]:
+            logger.info("Email connection test successful")
+            return result
+        else:
+            logger.error(f"Email connection test failed: {result.get('message')}")
+            # Return detailed error information
+            error_detail = {
+                "success": False,
+                "message": result.get("message", "Email connection test failed"),
+                "error": result.get("error", ""),
+                "help": result.get("help", "")
+            }
+            raise HTTPException(status_code=500, detail=error_detail)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Email test error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Email test failed: {str(e)}")
 
 if __name__ == "__main__":
     logger.info("🚀 === STARTING UVICORN SERVER ===")

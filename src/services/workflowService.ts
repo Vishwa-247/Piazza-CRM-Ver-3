@@ -83,6 +83,9 @@ class WorkflowService {
       throw new Error(`Lead ${leadId} not found`);
     }
 
+    console.log(`🚀 Starting workflow execution for lead ${leadData.name} (${leadId})`);
+    console.log(`🚀 Actions to execute:`, actions);
+
     const execution: WorkflowExecution = {
       id: `exec_${Date.now()}`,
       leadId,
@@ -114,6 +117,8 @@ class WorkflowService {
       for (let i = 0; i < actions.length; i++) {
         const action = actions[i];
         const progress = ((i + 1) / actions.length) * 100;
+
+        console.log(`🔄 Executing action ${i + 1}/${actions.length}:`, action);
 
         this.updateProgress(
           execution.id,
@@ -250,9 +255,9 @@ class WorkflowService {
       .replace("{{date}}", new Date().toLocaleDateString());
 
     // Try to send real email if configured
-    const { emailService } = await import("./emailService");
+    const { backendEmailService } = await import("./backendEmailService");
     
-    if (emailService.isConfigured()) {
+    if (backendEmailService.isConfigured()) {
       try {
         const emailData = {
           to: lead.email,
@@ -261,7 +266,7 @@ class WorkflowService {
           message: body,
         };
 
-        const emailSent = await emailService.sendEmail(emailData);
+        const emailSent = await backendEmailService.sendEmail(emailData);
         
         if (emailSent) {
           result.message = `📧 Email sent successfully: "${subject}" → ${lead.email}`;
@@ -269,15 +274,26 @@ class WorkflowService {
           
           console.log(`📧 Real email sent to ${lead.name}:`, { subject, to: lead.email });
           
+          // Update lead status to "contacted" when email is sent successfully
+          const { updateLead } = await import("./dataService");
+          updateLead(lead.id, { status: "contacted" });
+          
+          // Trigger UI update event
+          window.dispatchEvent(
+            new CustomEvent("leadUpdated", {
+              detail: { leadId: lead.id, updates: { status: "contacted" } },
+            })
+          );
+          
           // Show toast notification for real email sent
           const { toast } = await import("@/hooks/use-toast");
           toast({
             title: "📧 Real Email Sent",
-            description: `Email successfully sent to ${lead.name}`,
+            description: `Email successfully sent to ${lead.name} and status updated to CONTACTED`,
             duration: 3000,
           });
         } else {
-          throw new Error("Email service returned false");
+          throw new Error("Backend email service returned false");
         }
       } catch (error) {
         console.error("Failed to send real email:", error);
@@ -300,11 +316,22 @@ class WorkflowService {
 
       console.log(`📧 Email simulated for ${lead.name}:`, { subject, to: lead.email });
       
+      // Update lead status to "contacted" even for simulated emails
+      const { updateLead } = await import("./dataService");
+      updateLead(lead.id, { status: "contacted" });
+      
+      // Trigger UI update event
+      window.dispatchEvent(
+        new CustomEvent("leadUpdated", {
+          detail: { leadId: lead.id, updates: { status: "contacted" } },
+        })
+      );
+      
       // Show toast notification for simulated email
       const { toast } = await import("@/hooks/use-toast");
       toast({
         title: "📧 Email Simulated",
-        description: `Email simulated for ${lead.name} (Configure email in Settings to send real emails)`,
+        description: `Email simulated for ${lead.name} and status updated to CONTACTED`,
         duration: 3000,
       });
     }
@@ -500,14 +527,19 @@ This email was sent to {{email}} on {{date}}.`,
   public extractActionsFromWorkflow(workflow: SavedWorkflow): WorkflowAction[] {
     const actions: WorkflowAction[] = [];
 
+    console.log('🔍 Extracting actions from workflow:', workflow);
+
     // Find action nodes (exclude trigger nodes)
     const actionNodes = workflow.nodes.filter(
       (node: WorkflowNode) =>
         node.id !== "1" && !node.data.label.includes("Lead Created")
     );
 
+    console.log('🔍 Action nodes found:', actionNodes);
+
     actionNodes.forEach((node: WorkflowNode) => {
       const label = node.data.label;
+      console.log('🔍 Processing node:', { id: node.id, label });
 
       if (label.includes("Send Email")) {
         actions.push({
@@ -515,21 +547,27 @@ This email was sent to {{email}} on {{date}}.`,
           type: "send_email",
           label: "Send Welcome Email",
         });
+        console.log('✅ Added send_email action');
       } else if (label.includes("Update Status")) {
         actions.push({
           id: node.id,
           type: "update_status",
           label: "Update Lead Status",
         });
+        console.log('✅ Added update_status action');
       } else if (label.includes("Create Task")) {
         actions.push({
           id: node.id,
           type: "create_task",
           label: "Create Follow-up Task",
         });
+        console.log('✅ Added create_task action');
+      } else {
+        console.log('❌ Unknown action type:', label);
       }
     });
 
+    console.log('🔍 Final actions to execute:', actions);
     return actions;
   }
 

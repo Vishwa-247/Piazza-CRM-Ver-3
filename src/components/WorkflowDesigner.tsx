@@ -230,9 +230,13 @@ export const WorkflowDesigner = () => {
     setNodes(initialNodes);
     setEdges(initialEdges);
 
+    // Also remove the saved workflow from localStorage
+    localStorage.removeItem("crm-workflow");
+
     toast({
       title: "Workflow Cleared",
-      description: "Workflow has been reset to initial state",
+      description:
+        "Workflow has been reset to initial state and saved workflow removed",
     });
   };
 
