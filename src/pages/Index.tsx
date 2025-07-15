@@ -4,6 +4,14 @@ import { Header } from "@/components/Header";
 import { LandingPage } from "@/components/LandingPage";
 import { LeadCreation } from "@/components/LeadCreation";
 import { Settings } from "@/components/Settings";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { WorkflowDesigner } from "@/components/WorkflowDesigner";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -14,12 +22,20 @@ import {
   loadData,
   updateLead,
 } from "@/services/dataService";
-import { useCallback, useEffect, useState } from "react";
+import { workflowService } from "@/services/workflowService";
+import { Loader2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [leads, setLeads] = useState<Lead[]>([]);
   const [growthPercentage, setGrowthPercentage] = useState(0);
+  const [showRunWorkflowModal, setShowRunWorkflowModal] = useState(false);
+  const [pendingWorkflowLeadId, setPendingWorkflowLeadId] = useState<
+    string | null
+  >(null);
+  const [isRunningWorkflow, setIsRunningWorkflow] = useState(false);
+  const pendingWorkflowAfterLeadCreate = useRef(false);
 
   // Load data on component mount
   useEffect(() => {
@@ -42,21 +58,38 @@ const Index = () => {
       setLeads((prev) => [newLead, ...prev]);
       setGrowthPercentage(calculateGrowthPercentage([newLead, ...leads]));
 
-      // 🤖 AUTO-TRIGGER WORKFLOW FOR NEW LEAD
-      import("@/services/workflowService").then(({ workflowService }) => {
-        workflowService.autoTriggerWorkflow(newLead.id);
-      });
-
-      // Auto-navigate to dashboard after creating lead
+      // If coming from workflow modal, show workflow execution prompt for this lead
+      if (pendingWorkflowAfterLeadCreate.current) {
+        setPendingWorkflowLeadId(newLead.id);
+        setShowRunWorkflowModal(true);
+        pendingWorkflowAfterLeadCreate.current = false;
+      }
       setActiveTab("dashboard");
-
       toast({
         title: "Lead Created Successfully",
-        description: `${leadData.name} has been added and workflow triggered automatically.`,
+        description: `${leadData.name} has been added.`,
       });
     },
     [leads]
   );
+
+  const handleRunWorkflowForNewLead = async () => {
+    if (!pendingWorkflowLeadId) return;
+    setIsRunningWorkflow(true);
+    await workflowService.executeWorkflowForLead(pendingWorkflowLeadId);
+    setIsRunningWorkflow(false);
+    setShowRunWorkflowModal(false);
+    setPendingWorkflowLeadId(null);
+    toast({
+      title: "Workflow Executed",
+      description: "Workflow executed for the new lead.",
+    });
+  };
+
+  const handleSeeWorkflow = () => {
+    setShowRunWorkflowModal(false);
+    setActiveTab("workflows");
+  };
 
   const handleLeadUpdate = useCallback((id: string, updates: Partial<Lead>) => {
     updateLead(id, updates);
@@ -84,6 +117,13 @@ const Index = () => {
     [leads]
   );
 
+  const handleCreateNewLead = () => {
+    setShowLeadModal(false);
+    setShouldReopenModal(true);
+    pendingWorkflowAfterLeadCreate.current = true;
+    setActiveTab("create");
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case "landing":
@@ -91,7 +131,11 @@ const Index = () => {
       case "create":
         return <LeadCreation onLeadCreate={handleLeadCreate} />;
       case "workflows":
-        return <WorkflowDesigner />;
+        return (
+          <WorkflowDesigner
+            onCreateLeadRequest={() => setActiveTab("create")}
+          />
+        );
       case "analytics":
         return <Analytics leads={leads} />;
       case "settings":
@@ -122,6 +166,42 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
       <main className="container mx-auto px-4 py-8">{renderContent()}</main>
+      <Dialog
+        open={showRunWorkflowModal}
+        onOpenChange={(open) => setShowRunWorkflowModal(open)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Run Workflow for New Lead?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Do you want to run the workflow for this new lead?</p>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={handleSeeWorkflow}>
+              See the Workflow
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRunWorkflowModal(false);
+                setPendingWorkflowLeadId(null);
+              }}
+            >
+              No, Maybe Later
+            </Button>
+            <Button
+              onClick={handleRunWorkflowForNewLead}
+              disabled={isRunningWorkflow}
+            >
+              {isRunningWorkflow ? (
+                <Loader2 className="animate-spin h-4 w-4 mr-2" />
+              ) : null}
+              Yes, Run Workflow
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

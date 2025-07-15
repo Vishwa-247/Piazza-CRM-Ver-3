@@ -47,6 +47,70 @@ interface DashboardProps {
   onRefreshLeads: () => void;
 }
 
+// Reusable LeadCard component (exported for use in WorkflowDesigner)
+export interface LeadCardProps {
+  lead: Lead;
+  selected?: boolean;
+  onSelect?: (leadId: string) => void;
+  actions?: React.ReactNode;
+  children?: React.ReactNode;
+}
+
+export const LeadCard = ({ lead, selected, onSelect, actions, children }: LeadCardProps) => {
+  return (
+    <Card
+      className={`group hover:shadow-lg transition-all duration-200 border-slate-200 ${selected ? 'ring-2 ring-primary' : ''}`}
+      onClick={onSelect ? () => onSelect(lead.id) : undefined}
+      style={{ cursor: onSelect ? 'pointer' : undefined }}
+    >
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <h3 className="font-semibold text-lg mb-2 text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis max-w-xs">
+              {lead.name}
+            </h3>
+            {getStatusBadge(lead.status)}
+          </div>
+          {actions}
+        </div>
+        <div className="max-w-xs space-y-2">
+          <div className="flex items-center text-sm text-slate-600 break-all truncate">
+            <Mail className="h-4 w-4 mr-2 text-slate-400" />
+            {lead.email}
+          </div>
+          <div className="flex items-center text-sm text-slate-600">
+            <Phone className="h-4 w-4 mr-2 text-slate-400" />
+            {lead.phone}
+          </div>
+          <div className="flex items-center text-sm text-slate-600">
+            <Calendar className="h-4 w-4 mr-2 text-slate-400" />
+            {lead.createdAt.toLocaleDateString()}
+          </div>
+        </div>
+        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+          <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
+            {lead.source}
+          </span>
+          {children}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Status badge utility for use in both LeadCard and Dashboard
+export const getStatusBadge = (status: Lead["status"]) => {
+  const variants = {
+    new: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    contacted: "bg-amber-100 text-amber-800 border-amber-200",
+  };
+  return (
+    <Badge className={`${variants[status]} border font-medium`}>
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </Badge>
+  );
+};
+
 export const Dashboard = ({
   leads,
   onLeadUpdate,
@@ -83,19 +147,6 @@ export const Dashboard = ({
       contacted: leads.filter((l) => l.status === "contacted").length,
     };
   }, [leads]);
-
-  const getStatusBadge = (status: Lead["status"]) => {
-    const variants = {
-      new: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      contacted: "bg-amber-100 text-amber-800 border-amber-200",
-    };
-
-    return (
-      <Badge className={`${variants[status]} border font-medium`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
 
   const handleInteract = (lead: Lead) => {
     setSelectedLead(lead);
@@ -340,82 +391,53 @@ export const Dashboard = ({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredLeads.map((lead) => (
-                  <Card
+                  <LeadCard
                     key={lead.id}
-                    className="group hover:shadow-lg transition-all duration-200 border-slate-200"
+                    lead={lead}
+                    actions={
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-slate-600"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleStatusChange(lead.id, "contacted")
+                            }
+                          >
+                            Mark as Contacted
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-slate-600">
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Lead
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => onLeadDelete(lead.id)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Lead
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    }
                   >
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg mb-2 text-slate-900">
-                            {lead.name}
-                          </h3>
-                          {getStatusBadge(lead.status)}
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-slate-600"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleStatusChange(lead.id, "contacted")
-                              }
-                            >
-                              Mark as Contacted
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-slate-600">
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Lead
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => onLeadDelete(lead.id)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Lead
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-
-                      <div className="space-y-3 mb-4">
-                        <div className="flex items-center text-sm text-slate-600">
-                          <Mail className="h-4 w-4 mr-2 text-slate-400" />
-                          {lead.email}
-                        </div>
-                        <div className="flex items-center text-sm text-slate-600">
-                          <Phone className="h-4 w-4 mr-2 text-slate-400" />
-                          {lead.phone}
-                        </div>
-                        <div className="flex items-center text-sm text-slate-600">
-                          <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-                          {lead.createdAt.toLocaleDateString()}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
-                          {lead.source}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleInteract(lead)}
-                          className="border-slate-300 text-slate-700 hover:bg-slate-50"
-                        >
-                          <MessageSquare className="mr-2 h-4 w-4" />
-                          Interact
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleInteract(lead)}
+                      className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Interact
+                    </Button>
+                  </LeadCard>
                 ))}
               </div>
             )}
