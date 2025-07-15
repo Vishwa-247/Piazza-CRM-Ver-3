@@ -1,19 +1,20 @@
+import asyncio
+import base64
+import json
 import logging
 import re
 import time
-import base64
-import json
 from pathlib import Path
-from typing import Dict, Any, Optional, List
-import asyncio
-from PIL import Image
-import pytesseract
-import fitz  # PyMuPDF for PDF processing
+from typing import Any, Dict, List, Optional
+
 import cv2
-import numpy as np
-from groq import Groq
+import fitz  # PyMuPDF for PDF processing
 import httpx
+import numpy as np
+import pytesseract
 from config import settings
+from groq import Groq
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 

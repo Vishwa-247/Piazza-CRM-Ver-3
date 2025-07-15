@@ -104,6 +104,15 @@ const Index = () => {
             onLeadDelete={handleLeadDelete}
             onCreateLead={() => setActiveTab("create")}
             growthPercentage={growthPercentage}
+            onRefreshLeads={() => {
+              const data = loadData();
+              setLeads(data.leads);
+              setGrowthPercentage(calculateGrowthPercentage(data.leads));
+              toast({
+                title: "Leads Refreshed",
+                description: "Lead list has been updated.",
+              });
+            }}
           />
         );
     }

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { backendEmailService } from "@/services/backendEmailService";
-import { Mail, Save, TestTube } from "lucide-react";
+import { Eye, EyeOff, Mail, Save, TestTube } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -18,6 +18,7 @@ interface EmailFormData {
 export const Settings = () => {
   const [isTestingEmail, setIsTestingEmail] = useState(false);
   const [emailConfigured, setEmailConfigured] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register: registerEmail,
@@ -189,14 +190,28 @@ export const Settings = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="password">App Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Your Gmail app password"
-                  {...registerEmail("password", {
-                    required: "App password is required",
-                  })}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Your Gmail app password"
+                    {...registerEmail("password", {
+                      required: "App password is required",
+                    })}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    tabIndex={-1}
+                    onClick={() => setShowPassword((v) => !v)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
                 {emailErrors.password && (
                   <p className="text-sm text-destructive">
                     {emailErrors.password.message}

@@ -516,6 +516,7 @@ export const LeadCreation = ({ onLeadCreate }: LeadCreationProps) => {
           description: `Extracted information with ${Math.round(
             result.confidence_score * 100
           )}% confidence.`,
+          duration: 3000,
         });
       } else {
         throw new Error(result.message || "Processing failed");

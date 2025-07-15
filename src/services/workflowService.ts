@@ -293,15 +293,22 @@ class WorkflowService {
             duration: 3000,
           });
         } else {
-          throw new Error("Backend email service returned false");
+          // Only show error toast if emailSent is false
+          result.status = "failed";
+          result.message = `❌ Failed to send email: "${subject}" → ${lead.email}`;
+          result.data = { subject, body, to: lead.email, status: 'failed' };
+          const { toast } = await import("@/hooks/use-toast");
+          toast({
+            title: "❌ Email Failed",
+            description: `Failed to send email to ${lead.name}. Please check your email configuration.`,
+            variant: "destructive",
+            duration: 3000,
+          });
         }
       } catch (error) {
-        console.error("Failed to send real email:", error);
-        
         // Fall back to simulation
         result.message = `📧 Email simulated (sending failed): "${subject}" → ${lead.email}`;
         result.data = { subject, body, to: lead.email, status: 'simulated', error: String(error) };
-        
         const { toast } = await import("@/hooks/use-toast");
         toast({
           title: "⚠️ Email Simulation",
@@ -473,41 +480,20 @@ class WorkflowService {
     subject: string;
     body: string;
   } {
-    // Professional email template
+    // Clean, concise welcome email template
     return {
-      name: "Professional Welcome Email",
-      subject: "Thank you for your interest, {{name}} - Next Steps",
-      body: `Dear {{name}},
+      name: "Welcome Email",
+      subject: "Welcome to Piazza CRM, {{name}}!",
+      body: `Hi {{name}},
 
-Thank you for reaching out to us. We appreciate your interest in our services and are excited about the opportunity to work with you.
+Thank you for reaching out to us! We're excited to connect and help you with your needs.
 
-**What to Expect:**
-• Our dedicated team will review your inquiry within the next 24 hours
-• You'll receive a personalized consultation call to discuss your specific needs
-• We'll prepare a customized solution proposal based on your requirements
-• Ongoing support and guidance throughout our partnership
+A member of our team will contact you soon to discuss your requirements and next steps.
 
-**Next Steps:**
-Our senior consultant will contact you within 24 hours to schedule a detailed discussion about your goals and how we can best serve your needs.
-
-**Contact Information:**
-📧 Email: sales@company.com
-📞 Phone: (555) 123-4567
-🌐 Website: www.company.com
-
-If you have any urgent questions or need immediate assistance, please don't hesitate to reach out directly.
-
-We look forward to helping you achieve your objectives.
+If you have any questions, feel free to reply to this email.
 
 Best regards,
-
-**Sarah Johnson**
-Senior Sales Consultant
-CRM Solutions Inc.
-
----
-*This email was sent to {{email}} on {{date}}*
-*To unsubscribe, reply with "UNSUBSCRIBE" in the subject line*`,
+Piazza CRM Team`,
     };
   }
 

@@ -44,6 +44,7 @@ interface DashboardProps {
   onLeadDelete: (id: string) => void;
   onCreateLead: () => void;
   growthPercentage: number;
+  onRefreshLeads: () => void;
 }
 
 export const Dashboard = ({
@@ -52,6 +53,7 @@ export const Dashboard = ({
   onLeadDelete,
   onCreateLead,
   growthPercentage,
+  onRefreshLeads,
 }: DashboardProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "new" | "contacted">(
@@ -256,6 +258,27 @@ export const Dashboard = ({
               >
                 <Download className="mr-2 h-4 w-4" />
                 Export
+              </Button>
+              <Button
+                variant="outline"
+                onClick={onRefreshLeads}
+                className="border-slate-300 text-slate-700 hover:bg-slate-50"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="mr-2 h-4 w-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4.5 12a7.5 7.5 0 0113.36-4.64m0 0V3.75m0 3.61H15.75m3.75 4.64a7.5 7.5 0 01-13.36 4.64m0 0v3.61m0-3.61h3.61"
+                  />
+                </svg>
+                Refresh
               </Button>
               <Button
                 onClick={onCreateLead}
